@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+body {
+  @apply font-sans antialiased text-slate-900 transition-colors duration-300;
+  background-color: #fdfbf7;
+  background-image: 
+    radial-gradient(at 0% 0%, #fef2f2 0px, transparent 50%),
+    radial-gradient(at 100% 0%, #f5f3ff 0px, transparent 50%),
+    radial-gradient(at 100% 100%, #ecfdf5 0px, transparent 50%),
+    radial-gradient(at 0% 100%, #fffbeb 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+.dark body {
+  @apply text-slate-100;
+  background-color: #0f172a;
+  background-image: 
+    radial-gradient(at 0% 0%, #1e1b4b 0px, transparent 50%),
+    radial-gradient(at 100% 0%, #1e293b 0px, transparent 50%),
+    radial-gradient(at 100% 100%, #0f172a 0px, transparent 50%),
+    radial-gradient(at 0% 100%, #171717 0px, transparent 50%);
+}
+
+/* Modern utilities */
+.modern-box {
+  @apply bg-white/95 rounded-2xl border border-white/50 shadow-xl shadow-slate-900/10 backdrop-blur-xl transition-all;
+}
+
+.dark .modern-box {
+  @apply bg-slate-900/90 border-slate-800 shadow-slate-950/50;
+}
+
+.modern-box-sm {
+  @apply bg-white/95 rounded-xl border border-white/50 shadow-lg shadow-slate-900/5 backdrop-blur-xl transition-all;
+}
+
+.dark .modern-box-sm {
+  @apply bg-slate-900/90 border-slate-800 shadow-slate-950/30;
+}
+
+.modern-btn {
+  @apply rounded-xl shadow-sm transition-all duration-200 ease-out;
+}
+
+.modern-btn:active {
+  @apply scale-[0.98];
+}
+
+.modern-btn:disabled {
+  @apply opacity-50 cursor-not-allowed scale-100;
+}
+
+.modern-input {
+  @apply bg-zinc-50/80 rounded-xl border border-zinc-200 transition-all duration-200 ease-out;
+}
+
+.dark .modern-input {
+  @apply bg-slate-800/80 border-slate-700 text-white;
+}
+
+.modern-input:focus {
+  @apply outline-none border-violet-400 bg-white shadow-sm ring-4 ring-violet-500/20;
+}
+
+.dark .modern-input:focus {
+  @apply border-violet-500 bg-slate-800 ring-violet-500/10;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-zinc-200 rounded-full;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-700;
+}
+
+.modern-highlight {
+  @apply relative inline-block z-0;
+}
+
+.modern-highlight::after {
+  content: '';
+  @apply absolute left-0 bottom-1 w-full h-3 bg-rose-400/30 -z-10 rounded-full;
+}

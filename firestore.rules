@@ -1,0 +1,156 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (uid)
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required, email format)
+    //   - displayName: string (optional)
+    //   - familyId: string (optional)
+    //   - role: string (required, 'organizer' | 'contributor')
+    //   - photoURL: string (optional)
+    //
+    // Collection: families
+    // Document ID: familyId
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //   - inviteCode: string (required)
+    //   - organizerIds: list (required, strings)
+    //
+    // Collection: chores
+    // Document ID: choreId
+    // Fields:
+    //   - id: string (required)
+    //   - familyId: string (required)
+    //   - title: string (required)
+    //   - description: string (optional)
+    //   - assignedTo: string (optional, userId)
+    //   - status: string (required, 'pending' | 'done')
+    //   - dueDate: timestamp (optional)
+    //   - points: number (optional)
+    //   - createdBy: string (required, userId)
+    //   - completedAt: timestamp (optional)
+    //   - completedBy: string (optional, userId)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isFamilyMember(familyId) {
+      return isAuthenticated() && getUserData().familyId == familyId;
+    }
+
+    function isOrganizer() {
+      return isAuthenticated() && 
+        (getUserData().role == 'organizer' || 
+         (request.auth.token.email == "sodoom@google.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && (email == "" || email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"));
+    }
+
+    function validString(field, minLen, maxLen) {
+      return request.resource.data[field] is string && 
+             request.resource.data[field].size() >= minLen && 
+             request.resource.data[field].size() <= maxLen;
+    }
+
+    function validOptionalString(field, maxLen) {
+      return !(field in request.resource.data) || 
+             request.resource.data[field] == null ||
+             (request.resource.data[field] is string && request.resource.data[field].size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data, userId) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'familyId', 'role', 'photoURL', 'createdAt']) &&
+             data.uid == userId &&
+             isValidEmail(data.email) &&
+             data.role in ['organizer', 'contributor'] &&
+             validString('email', 5, 100) &&
+             validOptionalString('displayName', 100) &&
+             validOptionalString('photoURL', 500);
+    }
+
+    function isValidFamily(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'inviteCode', 'organizerIds', 'createdAt']) &&
+             validString('name', 1, 100) &&
+             validString('inviteCode', 1, 20) &&
+             data.organizerIds is list && data.organizerIds.size() > 0 && data.organizerIds.size() <= 10;
+    }
+
+    function isValidChore(data) {
+      return hasOnlyAllowedFields(['id', 'familyId', 'title', 'description', 'assignedTo', 'status', 'dueDate', 'points', 'createdBy', 'completedAt', 'completedBy', 'isRecurring', 'recurrence', 'recurrenceInterval', 'endDate', 'color', 'isProjected', 'originalChoreId']) &&
+             validString('title', 1, 200) &&
+             validOptionalString('description', 1000) &&
+             data.status in ['pending', 'done'] &&
+             data.familyId is string &&
+             validOptionalString('color', 50);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isFamilyMember(resource.data.familyId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data, userId);
+      allow update: if (isOwner(userId) || (isFamilyMember(resource.data.familyId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']))) && 
+                    isValidUser(request.resource.data, userId) && 
+                    request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(userId);
+    }
+
+    match /families/{familyId} {
+      allow read: if isFamilyMember(familyId);
+      allow create: if isAuthenticated() && isValidFamily(request.resource.data);
+      allow update: if isFamilyMember(familyId) && isOrganizer() && isValidFamily(request.resource.data);
+      allow delete: if isFamilyMember(familyId) && isOrganizer();
+    }
+
+    match /chores/{choreId} {
+      allow read: if isFamilyMember(resource.data.familyId);
+      allow create: if isFamilyMember(request.resource.data.familyId) && 
+                    (isOrganizer() || (request.resource.data.status == 'done' && request.resource.data.completedBy == request.auth.uid)) && 
+                    isValidChore(request.resource.data);
+      allow update: if isFamilyMember(resource.data.familyId) && (
+        // Organizers can update anything
+        (isOrganizer() && isValidChore(request.resource.data)) ||
+        // Contributors can update status, completion, assignedTo (claiming), and dueDate (recurring advancement)
+        (!isOrganizer() && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt', 'completedBy', 'assignedTo', 'dueDate']) &&
+         request.resource.data.status in ['pending', 'done'])
+      );
+      allow delete: if isOrganizer() && isFamilyMember(resource.data.familyId);
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user profile in the system",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "familyId": { "type": "string", "description": "ID of the family the user belongs to" },
+        "role": { "type": "string", "enum": ["organizer", "contributor"] },
+        "photoURL": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Family": {
+      "title": "Family",
+      "description": "A family group",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "inviteCode": { "type": "string" },
+        "organizerIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "name", "inviteCode", "organizerIds"]
+    },
+    "Chore": {
+      "title": "Chore",
+      "description": "A task to be completed",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "familyId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "assignedTo": { "type": "string", "description": "UID of the user assigned to the chore" },
+        "status": { "type": "string", "enum": ["pending", "done"] },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "points": { "type": "number" },
+        "createdBy": { "type": "string" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "completedBy": { "type": "string" },
+        "isRecurring": { "type": "boolean" },
+        "recurrence": { "type": "string", "enum": ["none", "daily", "weekly", "monthly"] },
+        "recurrenceInterval": { "type": "number", "description": "Interval for recurrence (e.g., every 2 weeks)" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "color": { "type": "string" },
+        "isProjected": { "type": "boolean" },
+        "originalChoreId": { "type": "string" }
+      },
+      "required": ["id", "familyId", "title", "status", "createdBy"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/families/{familyId}": {
+      "schema": "Family",
+      "description": "Family group documents"
+    },
+    "/chores/{choreId}": {
+      "schema": "Chore",
+      "description": "Chore documents"
+    }
+  }
+}
