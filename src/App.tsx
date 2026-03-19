@@ -74,10 +74,6 @@ interface AppContextType {
   profile: UserProfile | null;
   family: Family | null;
   loading: boolean;
-  dataDeleted: boolean;
-  setDataDeleted: (val: boolean) => void;
-  familyCreated: boolean;
-  setFamilyCreated: (val: boolean) => void;
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
   refreshProfile: () => Promise<void>;
@@ -134,13 +130,12 @@ const Login = () => {
 };
 
 const FamilySetup = () => {
-  const { user, refreshProfile, setFamilyCreated } = useApp();
+  const { user, refreshProfile } = useApp();
   const [mode, setMode] = useState<'choice' | 'create' | 'join'>('choice');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showDemoPopup, setShowDemoPopup] = useState(false);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,7 +144,6 @@ const FamilySetup = () => {
     setError(null);
     try {
       await familyService.createFamily(name, user.uid);
-      setFamilyCreated(true);
       await refreshProfile();
     } catch (error) {
       console.error("Error creating family:", error);
@@ -203,7 +197,7 @@ const FamilySetup = () => {
                 <ChevronRight className="text-zinc-300 group-hover:text-rose-500 transition-colors" />
               </button>
               <button 
-                onClick={() => setShowDemoPopup(true)}
+                onClick={() => setMode('join')}
                 className="group flex items-center justify-between p-6 modern-box-sm border border-zinc-100 hover:border-zinc-300 hover:bg-zinc-100/50 transition-all text-left"
               >
                 <div>
@@ -279,37 +273,6 @@ const FamilySetup = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Demo Popup */}
-      <AnimatePresence>
-        {showDemoPopup && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-violet-600/40 backdrop-blur-sm" onClick={() => setShowDemoPopup(false)} />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative modern-box w-full max-w-md p-8 text-center max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900"
-            >
-              <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/30 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users size={32} />
-              </div>
-              <h3 className="text-2xl font-display text-violet-950 dark:text-white mb-3">Sharing Disabled</h3>
-              <p className="text-zinc-600 dark:text-zinc-400 mb-8 leading-relaxed">
-                This feature has been disabled for this demo to protect user data. If you'd like to create your own version of the app and enable sharing, click the remix button!
-              </p>
-              <button 
-                autoFocus
-                onClick={() => setShowDemoPopup(false)}
-                className="w-full py-4 bg-violet-600 text-white modern-btn font-medium hover:bg-violet-700 transition-all shadow-lg shadow-violet-600/20"
-                title="Got it"
-              >
-                Got it
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
@@ -326,7 +289,6 @@ const Dashboard = () => {
   const [showManageFamily, setShowManageFamily] = useState(false);
   const [showHabitsAnalysis, setShowHabitsAnalysis] = useState(false);
   const [showSuggestModal, setShowSuggestModal] = useState(false);
-  const [showDemoPopup, setShowDemoPopup] = useState(false);
 
   useEffect(() => {
     if (!family) return;
@@ -406,7 +368,7 @@ const Dashboard = () => {
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <button 
-                onClick={() => setShowDemoPopup(true)}
+                onClick={() => setShowManageFamily(true)}
                 className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 px-2 py-1 rounded-full border border-rose-200 dark:border-rose-900/50 transition-colors"
               >
                 <UserPlus size={12} />
@@ -665,36 +627,6 @@ const Dashboard = () => {
             family={family}
             userUid={user.uid}
           />
-        )}
-      </AnimatePresence>
-      {/* Demo Popup */}
-      <AnimatePresence>
-        {showDemoPopup && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-violet-600/40 backdrop-blur-sm" onClick={() => setShowDemoPopup(false)} />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative modern-box w-full max-w-md p-8 text-center max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900"
-            >
-              <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/30 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users size={32} />
-              </div>
-              <h3 className="text-2xl font-display text-violet-950 dark:text-white mb-3">Sharing Disabled</h3>
-              <p className="text-zinc-600 dark:text-zinc-400 mb-8 leading-relaxed">
-                This feature has been disabled for this demo to protect user data. If you'd like to create your own version of the app and enable sharing, click the remix button!
-              </p>
-              <button 
-                autoFocus
-                onClick={() => setShowDemoPopup(false)}
-                className="w-full py-4 bg-violet-600 text-white modern-btn font-medium hover:bg-violet-700 transition-all shadow-lg shadow-violet-600/20"
-                title="Got it"
-              >
-                Got it
-              </button>
-            </motion.div>
-          </div>
         )}
       </AnimatePresence>
     </div>
@@ -1629,7 +1561,7 @@ const ChoreModal = ({ onClose, familyId, members, initialChore }: { onClose: () 
 // --- Main App Logic ---
 
 const AppContent = () => {
-  const { user, profile, loading, dataDeleted, setDataDeleted, familyCreated, setFamilyCreated } = useApp();
+  const { user, profile, loading } = useApp();
 
   if (loading) {
     return (
@@ -1645,61 +1577,6 @@ const AppContent = () => {
 
   return (
     <>
-      <AnimatePresence>
-        {dataDeleted && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-violet-600/40 backdrop-blur-sm" onClick={() => setDataDeleted(false)} />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative modern-box w-full max-w-md p-8 text-center"
-            >
-              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <AlertCircle size={32} />
-              </div>
-              <h3 className="text-2xl font-display text-violet-950 dark:text-white mb-3">Data Reset</h3>
-              <p className="text-zinc-600 dark:text-zinc-300 mb-8 leading-relaxed">
-                Your data has been deleted because it was older than 24 hours. This is a demo app. If you'd like your data to persist, please remix the app to create your own version!
-              </p>
-              <button 
-                autoFocus
-                onClick={() => setDataDeleted(false)}
-                className="w-full py-4 bg-violet-600 text-white modern-btn font-medium hover:bg-violet-700 transition-all"
-              >
-                I understand
-              </button>
-            </motion.div>
-          </div>
-        )}
-        {familyCreated && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-violet-600/40 backdrop-blur-sm" onClick={() => setFamilyCreated(false)} />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative modern-box w-full max-w-md p-8 text-center"
-            >
-              <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Sparkles size={32} />
-              </div>
-              <h3 className="text-2xl font-display text-violet-950 dark:text-white mb-3">Welcome to the Demo!</h3>
-              <p className="text-zinc-600 dark:text-zinc-300 mb-8 leading-relaxed">
-                This is just a demo and your data will be deleted after 24 hours. If you'd like to create your own version of the app and keep your data, please remix the app!
-              </p>
-              <button 
-                autoFocus
-                onClick={() => setFamilyCreated(false)}
-                className="w-full py-4 bg-violet-600 text-white modern-btn font-medium hover:bg-violet-700 transition-all"
-              >
-                Got it
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       {!user ? <Login /> : !profile?.familyId ? <FamilySetup /> : <Dashboard />}
     </>
   );
@@ -1710,8 +1587,6 @@ const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dataDeleted, setDataDeleted] = useState(false);
-  const [familyCreated, setFamilyCreated] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true' || window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -1745,26 +1620,6 @@ const AppProvider = ({ children }: { children: React.ReactNode }) => {
         if (u) {
           let p = await userService.getProfile(u.uid);
           
-          // Check if data is older than 24 hours
-          if (p) {
-            let shouldDelete = false;
-            if (p.createdAt) {
-              const createdAt = getSafeDate(p.createdAt);
-              const now = new Date();
-              const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-              if (hoursDiff >= 24) shouldDelete = true;
-            } else {
-              // If createdAt is missing, it's an old account from before the timestamp was added
-              shouldDelete = true;
-            }
-            
-            if (shouldDelete) {
-              await userService.deleteUserData(u.uid, p.familyId);
-              p = null; // Force recreation
-              setDataDeleted(true);
-            }
-          }
-
           if (!p) {
             // New user
             p = {
@@ -1796,7 +1651,7 @@ const AppProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AppContext.Provider value={{ user, profile, family, loading, dataDeleted, setDataDeleted, familyCreated, setFamilyCreated, darkMode, setDarkMode, refreshProfile }}>
+    <AppContext.Provider value={{ user, profile, family, loading, darkMode, setDarkMode, refreshProfile }}>
       {children}
     </AppContext.Provider>
   );
