@@ -122,6 +122,7 @@ export const familyService = {
     
     try {
       await setDoc(familyRef, familyData);
+      await setDoc(doc(db, 'invites', inviteCode), { familyId: familyRef.id, createdAt: serverTimestamp() });
       await userService.updateProfile(organizerId, { familyId: familyRef.id, role: 'organizer' });
       return familyRef.id;
     } catch (error) {
@@ -132,18 +133,16 @@ export const familyService = {
 
   async joinFamily(inviteCode: string, userId: string): Promise<string | null> {
     try {
-      const q = query(collection(db, 'families'), where('inviteCode', '==', inviteCode));
-      const querySnapshot = await getDocs(q);
+      const inviteDoc = await getDoc(doc(db, 'invites', inviteCode));
       
-      if (querySnapshot.empty) return null;
+      if (!inviteDoc.exists()) return null;
       
-      const familyDoc = querySnapshot.docs[0];
-      const familyId = familyDoc.id;
+      const familyId = inviteDoc.data().familyId;
       
       await userService.updateProfile(userId, { familyId, role: 'contributor' });
       return familyId;
     } catch (error) {
-      handleFirestoreError(error, OperationType.LIST, 'families');
+      handleFirestoreError(error, OperationType.GET, `invites/${inviteCode}`);
       return null;
     }
   },

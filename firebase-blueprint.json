@@ -51,6 +51,16 @@
         "originalChoreId": { "type": "string" }
       },
       "required": ["id", "familyId", "title", "status", "createdBy"]
+    },
+    "Invite": {
+      "title": "Invite",
+      "description": "An invite code mapping to a family",
+      "type": "object",
+      "properties": {
+        "familyId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["familyId"]
     }
   },
   "firestore": {
@@ -65,6 +75,10 @@
     "/chores/{choreId}": {
       "schema": "Chore",
       "description": "Chore documents"
+    },
+    "/invites/{inviteCode}": {
+      "schema": "Invite",
+      "description": "Invite code documents"
     }
   }
 }

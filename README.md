@@ -6,7 +6,7 @@
 
 This contains everything you need to run your app locally.
 
-View your app in AI Studio: https://ai.studio/apps/bundled/done_and_dusted
+View your app in AI Studio: https://ai.studio/apps/7d9410de-1603-4da8-82c9-9c71219242ce
 
 ## Run Locally
 

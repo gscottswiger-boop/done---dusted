@@ -58,13 +58,13 @@ service cloud.firestore {
     }
 
     function isFamilyMember(familyId) {
-      return isAuthenticated() && getUserData().familyId == familyId;
+      return isAuthenticated() && getUserData().get('familyId', null) == familyId;
     }
 
     function isOrganizer() {
       return isAuthenticated() && 
-        (getUserData().role == 'organizer' || 
-         (request.auth.token.email == "sodoom@google.com" && request.auth.token.email_verified == true));
+        (getUserData().get('role', 'contributor') == 'organizer' || 
+         (request.auth.token.email == "GScottSwiger@gmail.com" && request.auth.token.email_verified == true));
     }
 
     function hasOnlyAllowedFields(fields) {
@@ -87,6 +87,12 @@ service cloud.firestore {
              (request.resource.data[field] is string && request.resource.data[field].size() <= maxLen);
     }
 
+    function validOptionalTimestamp(field) {
+      return !(field in request.resource.data) || 
+             request.resource.data[field] == null ||
+             request.resource.data[field] is timestamp;
+    }
+
     // ===============================================================
     // Domain Validators
     // ===============================================================
@@ -98,23 +104,39 @@ service cloud.firestore {
              data.role in ['organizer', 'contributor'] &&
              validString('email', 5, 100) &&
              validOptionalString('displayName', 100) &&
-             validOptionalString('photoURL', 500);
+             validOptionalString('photoURL', 500) &&
+             validOptionalTimestamp('createdAt');
     }
 
     function isValidFamily(data) {
       return hasOnlyAllowedFields(['id', 'name', 'inviteCode', 'organizerIds', 'createdAt']) &&
              validString('name', 1, 100) &&
              validString('inviteCode', 1, 20) &&
-             data.organizerIds is list && data.organizerIds.size() > 0 && data.organizerIds.size() <= 10;
+             data.organizerIds is list && data.organizerIds.size() > 0 && data.organizerIds.size() <= 10 &&
+             validOptionalTimestamp('createdAt');
     }
 
     function isValidChore(data) {
-      return hasOnlyAllowedFields(['id', 'familyId', 'title', 'description', 'assignedTo', 'status', 'dueDate', 'points', 'createdBy', 'completedAt', 'completedBy', 'isRecurring', 'recurrence', 'recurrenceInterval', 'endDate', 'color', 'isProjected', 'originalChoreId']) &&
+      return hasOnlyAllowedFields(['id', 'familyId', 'title', 'description', 'assignedTo', 'status', 'dueDate', 'points', 'createdBy', 'completedAt', 'completedBy', 'isRecurring', 'recurrence', 'recurrenceInterval', 'endDate', 'color', 'isProjected', 'originalChoreId', 'createdAt']) &&
              validString('title', 1, 200) &&
              validOptionalString('description', 1000) &&
              data.status in ['pending', 'done'] &&
              data.familyId is string &&
-             validOptionalString('color', 50);
+             validOptionalString('color', 50) &&
+             validOptionalString('assignedTo', 100) &&
+             validOptionalString('completedBy', 100) &&
+             validOptionalString('createdBy', 100) &&
+             validOptionalString('originalChoreId', 100) &&
+             validOptionalTimestamp('dueDate') &&
+             validOptionalTimestamp('completedAt') &&
+             validOptionalTimestamp('endDate') &&
+             validOptionalTimestamp('createdAt');
+    }
+
+    function isValidInvite(data) {
+      return hasOnlyAllowedFields(['familyId', 'createdAt']) &&
+             validString('familyId', 1, 100) &&
+             validOptionalTimestamp('createdAt');
     }
 
     // ===============================================================
@@ -122,11 +144,21 @@ service cloud.firestore {
     // ===============================================================
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isFamilyMember(resource.data.familyId);
+      allow read: if isOwner(userId) || isFamilyMember(resource.data.get('familyId', null));
       allow create: if isOwner(userId) && isValidUser(request.resource.data, userId);
-      allow update: if (isOwner(userId) || (isFamilyMember(resource.data.familyId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']))) && 
+      allow update: if (
+                      isOwner(userId) || 
+                      (
+                        isFamilyMember(resource.data.get('familyId', null)) && 
+                        (
+                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']) ||
+                          (isOrganizer() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'familyId', 'role']))
+                        )
+                      )
+                    ) && 
                     isValidUser(request.resource.data, userId) && 
-                    request.resource.data.uid == resource.data.uid;
+                    request.resource.data.uid == resource.data.uid &&
+                    (request.resource.data.role == resource.data.role || isOrganizer());
       allow delete: if isOwner(userId);
     }
 
@@ -137,10 +169,16 @@ service cloud.firestore {
       allow delete: if isFamilyMember(familyId) && isOrganizer();
     }
 
+    match /invites/{inviteCode} {
+      allow get: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidInvite(request.resource.data);
+      allow delete: if isOrganizer() && isFamilyMember(resource.data.familyId);
+    }
+
     match /chores/{choreId} {
       allow read: if isFamilyMember(resource.data.familyId);
       allow create: if isFamilyMember(request.resource.data.familyId) && 
-                    (isOrganizer() || (request.resource.data.status == 'done' && request.resource.data.completedBy == request.auth.uid)) && 
+                    (isOrganizer() || (request.resource.data.status == 'done' && request.resource.data.get('completedBy', null) == request.auth.uid)) && 
                     isValidChore(request.resource.data);
       allow update: if isFamilyMember(resource.data.familyId) && (
         // Organizers can update anything
@@ -148,7 +186,7 @@ service cloud.firestore {
         // Contributors can update status, completion, assignedTo (claiming), and dueDate (recurring advancement)
         (!isOrganizer() && 
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt', 'completedBy', 'assignedTo', 'dueDate']) &&
-         request.resource.data.status in ['pending', 'done'])
+         isValidChore(request.resource.data))
       );
       allow delete: if isOrganizer() && isFamilyMember(resource.data.familyId);
     }

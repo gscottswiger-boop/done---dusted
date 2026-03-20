@@ -1,10 +1,10 @@
 {
-  "projectId": "done-and-dusted-d72a7",
-  "appId": "1:38276813628:web:15d41ca32f0808cfd8c439",
-  "apiKey": "AIzaSyAfuoDPO6lGVYq3WKxAnjrdXVqXFgyCUuk",
-  "authDomain": "done-and-dusted-d72a7.firebaseapp.com",
-  "firestoreDatabaseId": "(default)",
-  "storageBucket": "done-and-dusted-d72a7.firebasestorage.app",
-  "messagingSenderId": "38276813628",
+  "projectId": "gen-lang-client-0383180899",
+  "appId": "1:713821304849:web:baf61e2af510dba895d9b0",
+  "apiKey": "AIzaSyDVJDC8vUKo9rQvXqaGq95bbMEzpyOcVtM",
+  "authDomain": "gen-lang-client-0383180899.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-7d9410de-1603-4da8-82c9-9c71219242ce",
+  "storageBucket": "gen-lang-client-0383180899.firebasestorage.app",
+  "messagingSenderId": "713821304849",
   "measurementId": ""
 }

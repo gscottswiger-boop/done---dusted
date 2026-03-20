@@ -118,6 +118,30 @@ export const ManageFamilyModal = ({ family, members, onClose, currentUserId }: M
             </div>
           </form>
 
+          {isOrganizer && (
+            <div className="mb-8">
+              <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-400 uppercase tracking-widest mb-2">Invite Code</label>
+              <div className="flex items-center gap-2 p-3 modern-box-sm border border-zinc-100 dark:border-slate-800 bg-zinc-50 dark:bg-slate-800/50">
+                <code className="flex-1 font-mono text-lg text-violet-600 dark:text-violet-400 font-bold tracking-wider text-center select-all">
+                  {family.inviteCode}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(family.inviteCode);
+                    // Optional: add a toast or visual feedback here
+                  }}
+                  className="p-2 text-zinc-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/30 rounded-lg transition-colors"
+                  title="Copy to clipboard"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                </button>
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 text-center">
+                Share this code with family members so they can join.
+              </p>
+            </div>
+          )}
+
           <div>
             <div className="flex items-center justify-between mb-4">
               <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-400 uppercase tracking-widest">Members</label>
